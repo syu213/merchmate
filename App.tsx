@@ -67,9 +67,17 @@ const App: React.FC = () => {
             : item
         ));
       } catch (err) {
-        setGeneratedItems(prev => prev.map(item => 
-          item.id === itemId 
-            ? { ...item, status: 'error', error: "Failed to generate" } 
+        let errorMessage = "Failed to generate";
+        if (err instanceof Error) {
+          if (err.name === 'RateLimitError') {
+            errorMessage = "API quota exceeded. Please try again later.";
+          } else {
+            errorMessage = err.message;
+          }
+        }
+        setGeneratedItems(prev => prev.map(item =>
+          item.id === itemId
+            ? { ...item, status: 'error', error: errorMessage }
             : item
         ));
       } finally {
@@ -106,8 +114,16 @@ const App: React.FC = () => {
         item.id === itemId ? { ...item, resultImage: result, status: 'success' } : item
       ));
     } catch (err) {
-      setGeneratedItems(prev => prev.map(item => 
-        item.id === itemId ? { ...item, status: 'error', error: "Failed to edit" } : item
+      let errorMessage = "Failed to edit";
+      if (err instanceof Error) {
+        if (err.name === 'RateLimitError') {
+          errorMessage = "API quota exceeded. Please try again later.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      setGeneratedItems(prev => prev.map(item =>
+        item.id === itemId ? { ...item, status: 'error', error: errorMessage } : item
       ));
     } finally {
       setProcessing({ isGenerating: false, activeCount: 0 });

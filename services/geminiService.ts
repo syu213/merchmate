@@ -1,58 +1,67 @@
-import { GoogleGenAI } from "@google/genai";
+// Secure Gemini API service - communicates with backend proxy
+// API key is hidden on server, never exposed to browser
 
-console.log('API Key from env:', import.meta.env.VITE_GEMINI_API_KEY);
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-if (!apiKey) {
-  console.error('API Key is missing! Check your .env.local file');
-}
-
-const ai = new GoogleGenAI({
-  apiKey: apiKey
-});
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
 /**
- * Edits/Generates an image based on a source image and a text prompt.
- * Uses gemini-2.5-flash-image.
+ * Edits/Generates an image via secure backend proxy
+ * The API key never reaches the browser
  */
 export const editImage = async (
   imageBase64: string,
   prompt: string
 ): Promise<string> => {
   try {
-    // Clean base64 string if it contains metadata header
-    const cleanBase64 = imageBase64.split(',')[1] || imageBase64;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              data: cleanBase64,
-              mimeType: 'image/png',
-            },
-          },
-          {
-            text: prompt,
-          },
-        ],
+    const response = await fetch(`${API_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        imageBase64,
+        prompt
+      }),
     });
 
-    const parts = response.candidates?.[0]?.content?.parts;
-    if (!parts) {
-      throw new Error("No content returned from Gemini.");
-    }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
 
-    for (const part of parts) {
-      if (part.inlineData && part.inlineData.data) {
-        return `data:image/png;base64,${part.inlineData.data}`;
+      if (response.status === 429) {
+        const rateLimitError = new Error(
+          errorData.error || 'API quota exceeded. Please try again later.'
+        );
+        rateLimitError.name = 'RateLimitError';
+        throw rateLimitError;
       }
+
+      throw new Error(
+        errorData.error || `API request failed with status ${response.status}`
+      );
     }
 
-    throw new Error("No image data found in the response.");
+    const data = await response.json();
+
+    if (!data.success || !data.image) {
+      throw new Error('No image data returned from server');
+    }
+
+    return data.image;
+
   } catch (error) {
-    console.error("Gemini Generation Error:", error);
+    console.error('Image generation error:', error);
     throw error;
+  }
+};
+
+/**
+ * Check if the backend server is available
+ */
+export const checkServerHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/health`);
+    return response.ok;
+  } catch (error) {
+    console.warn('Backend server not available:', error);
+    return false;
   }
 };
