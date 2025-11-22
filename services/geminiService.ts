@@ -1,16 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
-import { AspectRatio } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
  * Edits/Generates an image based on a source image and a text prompt.
- * Uses gemini-2.5-flash-image (Nano Banana).
+ * Uses gemini-2.5-flash-image.
  */
-export const generateMerchMockup = async (
+export const editImage = async (
   imageBase64: string,
-  prompt: string,
-  aspectRatio: AspectRatio = "1:1"
+  prompt: string
 ): Promise<string> => {
   try {
     // Clean base64 string if it contains metadata header
@@ -23,7 +21,7 @@ export const generateMerchMockup = async (
           {
             inlineData: {
               data: cleanBase64,
-              mimeType: 'image/png', // Assuming PNG for logos, but API handles standard types
+              mimeType: 'image/png',
             },
           },
           {
@@ -31,11 +29,8 @@ export const generateMerchMockup = async (
           },
         ],
       },
-      // Note: responseMimeType and responseSchema are NOT supported for this model.
-      // We rely on extracting the image from the candidates.
     });
 
-    // Iterate through parts to find the image
     const parts = response.candidates?.[0]?.content?.parts;
     if (!parts) {
       throw new Error("No content returned from Gemini.");
