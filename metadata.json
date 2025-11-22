@@ -1,0 +1,5 @@
+{
+  "name": "MerchMate AI",
+  "description": "Generate professional merchandise mockups instantly using your logo and AI text prompts. Powered by Gemini 2.5 Flash Image.",
+  "requestFramePermissions": []
+}
