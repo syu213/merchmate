@@ -1,7 +1,9 @@
 // Secure Gemini API service - communicates with backend proxy
 // API key is hidden on server, never exposed to browser
 
-const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:3001';
+// Detect if we're on Vercel or local development
+const API_BASE_URL = import.meta.env.PROD ? '' :
+  (import.meta.env.VITE_USE_VERCEL_API ? '' : 'http://localhost:3001');
 
 /**
  * Edits/Generates an image via secure backend proxy
