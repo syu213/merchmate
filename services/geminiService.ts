@@ -1,6 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+console.log('API Key from env:', import.meta.env.VITE_GEMINI_API_KEY);
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+if (!apiKey) {
+  console.error('API Key is missing! Check your .env.local file');
+}
+
+const ai = new GoogleGenAI({
+  apiKey: apiKey
+});
 
 /**
  * Edits/Generates an image based on a source image and a text prompt.
